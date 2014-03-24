@@ -1,0 +1,55 @@
+Enter file contents here
+
+/* 
+   OrderID, OrderDate (Orders), 
+   CompanyName, ContactName, City, Country (Customers), 
+   ProductName, QuantityPerUnit, UnitPrice (Products)
+*/
+
+/* Uses Northwind database */
+ALTER PROCEDURE spShowOrderDetailByRange
+(
+ @OrderID int,
+ @StartTotal money,
+ @EndTotal money
+)
+as 
+DECLARE @OrderTotal money 
+SET @OrderTotal = (SELECT SUM(Quantity * UnitPrice) as total
+					 FROM [Order Details]
+					WHERE OrderID = @OrderID)
+  
+SELECT O.OrderID, O.OrderDate, C.CompanyName, C.ContactName, C.City, C.Country,
+       P.ProductName, OD.Quantity, OD.UnitPrice, (OD.Quantity * OD.UnitPrice) as ItemTotal, 
+       @OrderTotal as OrderTotal
+  FROM Orders O
+  JOIN [Order Details] OD
+    ON OD.OrderID = O.OrderID
+  JOIN Customers C 
+    ON C.CustomerID = O.CustomerID
+  JOIN Products P 
+    on P.ProductID = OD.ProductID
+ WHERE O.OrderID = @OrderID
+   AND @OrderTotal >= @StartTotal
+   AND @OrderTotal <= @EndTotal 
+ GROUP BY O.OrderID,OrderDate,C.CompanyName,ContactName,City,Country,P.ProductName,
+          OD.Quantity,OD.UnitPrice
+ ORDER BY O.OrderDate DESC
+   
+EXEC spShowOrderDetailByRange '10643','1000.00','1090.00'
+   
+/* AWESOME */
+/*
+SELECT O.EmployeeID, CustomerID, (OD.UnitPrice * OD.Quantity) as ItemTotal 
+  FROM Orders O
+  JOIN [Order Details] OD
+    ON OD.OrderID = O.OrderID
+ WHERE O.CustomerID = 'ALFKI'
+ ORDER BY O.EmployeeID, O.CustomerID
+ COMPUTE SUM(OD.UnitPrice * OD.Quantity) BY O.EmployeeID, O.CustomerID
+
+ --COMPUTE SUM(OD.UnitPrice * OD.Quantity), AVG(OD.UnitPrice * OD.Quantity) BY O.EmployeeID 
+*/
+     
+    
+    
